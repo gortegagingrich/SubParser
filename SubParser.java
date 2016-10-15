@@ -1,5 +1,6 @@
 import java.util.Scanner;
 import java.io.File;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -32,7 +33,7 @@ public class SubParser {
 
                     scan.close();
 
-                    System.out.println(lines);
+                    lines.printLines(System.out);
                 }
             } catch (Exception e) {
                  System.err.println(e.toString());
@@ -43,7 +44,8 @@ public class SubParser {
 class LineSet {
     private ArrayList<Line> lines;
     public static final String[] STRINGS = {"var trackPos = argument0;\n\n"
-                                        , " {}"};
+                                        , " {pointer -= 2}"};
+
 
     public LineSet() {
         lines = new ArrayList<>();
@@ -55,44 +57,49 @@ class LineSet {
         temp.setText(ln[9]);
         temp.setStartTime(ln[1]);
         temp.setEndTime(ln[2]);
-        System.out.println(temp);
         lines.add(temp);
     }
-    
-    public String toString() {
-        String out = STRINGS[0];
+
+    public void printLines(PrintStream out) {
         int i;
-        
-        for (i = 0; i < lines.size() - 1; i++) {
-            out += lines.get(i);
+        Line line;
+
+        out.print(LineSet.STRINGS[0]);
+
+        for (i = 0; i < lines.size(); i++) {
+            line = lines.get(i);
+
+            out.printf(Line.FORMAT, line.getStartTime(), line.getEndTime(),
+                        line.getText(), line.getText());
         }
-        
-        out += STRINGS[1];
-        
-        return out;
+
+        out.print(LineSet.STRINGS[1]);
     }
 }
 
 class Line {
     private double startTime, endTime; // in seconds
     private String txt;
-    
-    private static final String[] strings =  {"if (trackPos >= ", " && " 
-            + "trackPos < ", ") {\n\tif (linePos == 0) {\n\t\tstr = \"" 
-            , "\";\n\t}\n} else "};
-
-    // constant strings used when converting to a string
-    public String toString() {
-        String out = "";
-        
-        out += strings[0] + startTime + strings[1] + endTime + strings[2] + txt
-                + strings[3];
-
-        return out;
-    }
+    public static final String FORMAT = "if "
+                                    + "(trackPos >= %.2f && trackPos < %.2f)"
+                                    + " {\n\tif (string_pos(%s,str) == 0) "
+                                    + "{\n\t\tstr = %s;"
+                                    + "\n\t\tpointer = 0;\n\t}\n} else ";
 
     public void setText(String str) {
-        txt = str;
+        txt = "\"" + str + "\"";
+    }
+
+    public double getStartTime() {
+        return startTime;
+    }
+
+    public double getEndTime() {
+        return endTime;
+    }
+
+    public String getText() {
+        return txt;
     }
 
     public void setStartTime(String str) {
