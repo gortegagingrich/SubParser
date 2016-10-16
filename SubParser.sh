@@ -1,0 +1,1 @@
+java SubParser $1 | sed 's/\\n/#/' > $1.gml
