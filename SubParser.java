@@ -2,7 +2,6 @@ import java.util.Scanner;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class SubParser {
 	public static final String[] ERROR_MSG = {"This requires 1 argument"};
@@ -26,8 +25,13 @@ public class SubParser {
 						
 						lineParts = str.split(",");
 
-						if (lineParts.length == 10 && lineParts[0].equals("Dialogue: 0")) {
-							lines.addLine(lineParts);
+						if (lineParts.length == 10 
+								&& lineParts[0].equals("Dialogue: 0")) {
+							lines.addLine(lineParts, false);
+							
+						} else if (lineParts.length == 10 
+								&& lineParts[0].equals("Dialogue: 1")) {
+							lines.addLine(lineParts,true);
 						}
 					}
 
@@ -45,19 +49,21 @@ class LineSet {
 	private ArrayList<Line> lines;
 	public static final String[] STRINGS = {"var trackPos = argument0;\n"
 													+ "var newString;\n\n"
-													, " {pointer max(-1,pointer-2)}"};
+													, " {pointer=max(-1,pointer-2)}"};
 
 
 	public LineSet() {
 		lines = new ArrayList<>();
 	}
 
-	public void addLine(String[] ln) {
+	public void addLine(String[] ln, boolean add) {
 		Line temp = new Line();
 
 		temp.setText(ln[9]);
 		temp.setStartTime(ln[1]);
 		temp.setEndTime(ln[2]);
+		temp.setAdd(add);
+
 		lines.add(temp);
 	}
 
@@ -70,8 +76,13 @@ class LineSet {
 		for (i = 0; i < lines.size(); i++) {
 			line = lines.get(i);
 
-			out.printf(Line.FORMAT, line.getStartTime(), line.getEndTime(),
-						line.getText());
+			if (line.getAdd()) {
+				out.printf(Line.FORMAT_ADD, line.getStartTime(),
+					line.getEndTime(),line.getText());
+			} else {
+				out.printf(Line.FORMAT_REPLACE, line.getStartTime(),
+					line.getEndTime(),line.getText());
+			}
 		}
 
 		out.print(LineSet.STRINGS[1]);
@@ -79,14 +90,23 @@ class LineSet {
 }
 
 class Line {
+	private boolean add = false; // whether or not the line is appended
 	private double startTime, endTime; // in seconds
 	private String txt;
-	public static final String FORMAT = "if "
+
+	public static final String FORMAT_REPLACE = "if "
 									+ "(trackPos >= %.2f && trackPos < %.2f)"
 									+ " {\n   newString = %s;"
 									+	"\n   if (string_pos(newString,str) == 0) "
 									+ "{\n      str = newString;"
 									+ "\n      pointer = 0;\n   }\n} else ";
+
+	public static final String FORMAT_ADD = "if "
+									+ "(trackPos >= %.2f && trackPos < %.2f)"
+									+ " {\n   newString = %s;"
+									+	"\n   if (string_pos(newString,str) == 0) "
+									+ "{\n      str += newString;"
+									+ "\n   }\n} else ";
 
 	public void setText(String str) {
 		txt = "\"" + str + "\"";
@@ -102,6 +122,14 @@ class Line {
 
 	public String getText() {
 		return txt;
+	}
+
+	public boolean getAdd() {
+		return add;
+	}
+
+	public void setAdd(boolean add) {
+		this.add = add;
 	}
 
 	public void setStartTime(String str) {
